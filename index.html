@@ -236,3 +236,35 @@
 </script>
 </body>
 </html>
+<div class="mafia-container">
+    <h2>🎭 Комната Мафии</h2>
+
+    <!-- Вход в комнату -->
+    <div id="lobby-setup">
+        <input type="text" id="playerName" placeholder="Ваше имя">
+        <button onclick="createRoom()">Создать комнату</button>
+        <div style="margin-top: 10px;">
+            <input type="text" id="roomCodeInput" placeholder="Код комнаты">
+            <button onclick="joinRoom()">Войти</button>
+        </div>
+    </div>
+
+    <!-- Игровой интерфейс (скрыт по умолчанию) -->
+    <div id="game-room" style="display: none;">
+        <div class="room-header">
+            <span>Комната: <b id="roomDisplay">#0000</b></span>
+            <button onclick="leaveRoom()">Выйти</button>
+        </div>
+
+        <div class="players-section">
+            <h3>Игроки в лобби:</h3>
+            <ul id="playerList"></ul>
+        </div>
+
+        <div id="role-display" class="role-box">
+            Роль еще не назначена...
+        </div>
+
+        <button id="startGameBtn" class="primary-btn" onclick="distributeRoles()">Распределить роли</button>
+    </div>
+</div>
