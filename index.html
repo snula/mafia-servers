@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mafia Online | Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-night: #0f172a;
+            --bg-day: #f59e0b;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --mafia-color: #ef4444;
+            --citiz-color: #38bdf8;
+            --accent: #8b5cf6;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-night);
+            color: var(--text-color);
+            transition: background 1s;
+            overflow-x: hidden;
+        }
+
+        .day-mode { background-color: #7dd3fc; color: #0f172a; }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Экран лобби */
+        #lobby, #game, #results { display: none; }
+        .active { display: block !important; }
+
+        h1 { margin-bottom: 20px; text-transform: uppercase; letter-spacing: 3px; }
+
+        .player-list {
+            list-style: none;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .player-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid transparent;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .player-card.dead { opacity: 0.5; text-decoration: line-through; border-color: #475569 !important; }
+        .player-card.selected { border-color: var(--accent); transform: scale(1.05); }
+
+        /* Фазы игры */
+        .status-bar {
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .role-info {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: var(--accent);
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        button:disabled { background: #475569; }
+
+        .log {
+            font-size: 13px;
+            text-align: left;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- ЛОББИ -->
+    <div id="lobby" class="active">
+        <h1>MAFIA</h1>
+        <p>Настройка игры (Локальный режим)</p>
+        <div style="margin: 20px 0;">
+            <input type="number" id="playerCount" value="6" min="4" max="12" style="padding: 10px; border-radius: 5px;">
+            <p style="font-size: 12px; margin-top: 5px;">Минимум 4 игрока</p>
+        </div>
+        <button onclick="startGame()">НАЧАТЬ ИГРУ</button>
+    </div>
+
+    <!-- ИГРОВОЕ ПОЛЕ -->
+    <div id="game">
+        <div id="phaseDisplay" class="status-bar">ГОРОД ЗАСЫПАЕТ...</div>
+        <div id="roleDisplay" class="role-info">Ваша роль: ?</div>
+
+        <div id="playerContainer" class="player-list">
+            <!-- Сюда JS добавит игроков -->
+        </div>
+
+        <div id="actionHint" style="margin-bottom: 15px;">Выберите жертву:</div>
+        <button id="actionBtn" onclick="processAction()">ПОДТВЕРДИТЬ ХОД</button>
+
+        <div id="gameLog" class="log"></div>
+    </div>
+
+    <!-- РЕЗУЛЬТАТЫ -->
+    <div id="results">
+        <h1 id="winMessage">ПОБЕДА</h1>
+        <button onclick="location.reload()">В МЕНЮ</button>
+    </div>
+</div>
+
+<!-- Подключаем клиент Socket.io -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+    const socket = io('https://твой-адрес-сервера.com'); // Ссылка на твой сервер
+    const tg = window.Telegram.WebApp;
+    const userName = tg.initDataUnsafe?.user?.first_name || "Игрок";
+
+    let myRole = "";
+    let allPlayers = [];
+
+    // При входе отправляем имя серверу
+    socket.emit('joinGame', userName);
+
+    // Обновление списка игроков от сервера
+    socket.on('updatePlayers', (serverPlayers) => {
+        allPlayers = serverPlayers;
+        renderPlayers();
+    });
+
+    // Получение роли
+    socket.on('getRole', (role) => {
+        myRole = role;
+        document.getElementById('roleDisplay').textContent = "Ваша роль: " + role;
+        document.getElementById('roleDisplay').style.color = (role === 'Мафия') ? 'red' : 'cyan';
+    });
+
+    socket.on('gameStarted', (players) => {
+        showScreen('game');
+        allPlayers = players;
+        renderPlayers();
+    });
+
+    socket.on('playerKilled', (data) => {
+        alert(`Игрок ${data.name} покинул нас...`);
+    });
+
+    function renderPlayers() {
+        const container = document.getElementById('playerContainer');
+        container.innerHTML = '';
+
+        allPlayers.forEach((p) => {
+            const card = document.createElement('div');
+            card.className = `player-card ${!p.isAlive ? 'dead' : ''}`;
+            card.innerHTML = `<div>👤</div><div>${p.name}</div>`;
+
+            // Если мы живы и это не мы сами, можно нажать
+            if (p.isAlive && p.id !== socket.id) {
+                card.onclick = () => sendAction(p.id);
+            }
+            container.appendChild(card);
+        });
+    }
+
+    function startGame() {
+        socket.emit('startGame');
+    }
+
+    function sendAction(targetId) {
+        socket.emit('action', targetId);
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.container > div').forEach(div => div.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+</script>
