@@ -3,268 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mafia Online | Mini App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Mafia Game - Создание комнаты</title>
     <style>
-        :root {
-            --bg-night: #0f172a;
-            --bg-day: #7dd3fc;
-            --card-bg: #1e293b;
-            --text-color: #f8fafc;
-            --mafia-color: #ef4444;
-            --citiz-color: #38bdf8;
-            --accent: #8b5cf6;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: var(--bg-night);
-            color: var(--text-color);
-            transition: background 1s;
-            overflow-x: hidden;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
             min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
-
-        .day-mode { background-color: var(--bg-day); color: #0f172a; }
-        .day-mode .player-card { background: white; color: #0f172a; border: 1px solid #ddd; }
 
         .container {
+            width: 100%;
             max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
         }
 
-        #lobby, #game, #results { display: none; }
-        .active { display: block !important; }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
 
-        h1 { margin-bottom: 20px; text-transform: uppercase; letter-spacing: 3px; }
+        .player-section {
+            margin-bottom: 30px;
+        }
 
-        .player-list {
-            list-style: none;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #64ffda;
+        }
+
+        .input-group {
             margin-bottom: 20px;
         }
 
-        .player-card {
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 12px;
-            border: 2px solid transparent;
-            transition: 0.3s;
-            cursor: pointer;
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #a9b7c6;
         }
 
-        .player-card.dead { opacity: 0.5; text-decoration: line-through; filter: grayscale(1); pointer-events: none; }
-        .player-card.selected { border-color: var(--accent); transform: scale(1.05); }
-
-        .status-bar {
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
-
-        button {
+        input {
             width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #64ffda;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        input::placeholder {
+            color: #8899aa;
+        }
+
+        .room-actions {
+            display: grid;
+            gap: 15px;
+        }
+
+        .btn {
             padding: 15px;
             border: none;
-            border-radius: 12px;
-            background: var(--accent);
-            color: white;
-            font-weight: bold;
+            border-radius: 10px;
             font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
-        .log {
-            font-size: 13px;
-            text-align: left;
-            background: rgba(0,0,0,0.3);
+        .btn-create {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            color: white;
+        }
+
+        .btn-join {
+            background: linear-gradient(135deg, #0984e3 0%, #0652a0 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .room-code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 30px;
+            display: none;
+        }
+
+        .code-display {
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            color: #64ffda;
+            text-align: center;
+            letter-spacing: 3px;
+            margin: 10px 0;
+        }
+
+        .copy-btn {
+            background: #2d3436;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .message {
             padding: 10px;
-            border-radius: 8px;
-            margin-top: 15px;
-            max-height: 120px;
-            overflow-y: auto;
+
+DERIKOMA, [04.02.2026 0:25]
+border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+            text-align: center;
+        }
+
+        .success {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            display: block;
+        }
+
+        .error {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
 <body>
-
 <div class="container">
-    <!-- ЛОББИ -->
-    <div id="lobby" class="active">
-        <h1>MAFIA</h1>
-        <p>Настройка игры</p>
-        <div style="margin: 20px 0;">
-            <label>Количество игроков:</label><br>
-            <input type="number" id="playerCount" value="6" min="4" max="12" style="padding: 10px; margin-top:10px;">
+    <h1>🎮 Мафия Онлайн</h1>
+
+    <div class="player-section">
+        <div class="section-title">👤 Ваш профиль</div>
+        <div class="input-group">
+            <label for="playerName">Имя игрока</label>
+            <input type="text" id="playerName" placeholder="Введите ваше имя" value="Игрок">
         </div>
-        <button onclick="startGame()">НАЧАТЬ ИГРУ</button>
     </div>
 
-    <!-- ИГРОВОЕ ПОЛЕ -->
-    <div id="game">
-        <div id="phaseDisplay" class="status-bar">ГОРОД ЗАСЫПАЕТ...</div>
-        <div id="roleDisplay" style="margin-bottom:10px; font-weight:bold; color:var(--mafia-color);"></div>
-
-        <div id="playerContainer" class="player-list"></div>
-
-        <p id="actionHint">Выберите игрока для хода</p>
-        <button id="actionBtn" onclick="processAction()">ПОДТВЕРДИТЬ</button>
-
-        <div id="gameLog" class="log"></div>
+    <div class="room-creation">
+        <div class="section-title">🆕 Создать новую комнату</div>
+        <div class="input-group">
+            <label for="roomName">Название комнаты</label>
+            <input type="text" id="roomName" placeholder="Введите название комнаты" value="Вечеринка Мафии">
+        </div>
+        <button class="btn btn-create" onclick="createRoom()">
+            🏠 Создать комнату
+        </button>
     </div>
 
-    <!-- РЕЗУЛЬТАТЫ -->
-    <div id="results">
-        <h1 id="winMessage">ПОБЕДА</h1>
-        <button onclick="location.reload()">ИГРАТЬ СНОВА</button>
+    <div class="room-join">
+        <div class="section-title" style="margin-top: 30px;">🔗 Присоединиться к комнате</div>
+        <div class="input-group">
+            <label for="roomCode">Код комнаты</label>
+            <input type="text" id="roomCode" placeholder="Введите код комнаты">
+        </div>
+        <button class="btn btn-join" onclick="joinRoom()">
+            🎯 Присоединиться
+        </button>
     </div>
+
+    <div class="room-code" id="roomCodeContainer">
+        <div class="section-title">Код вашей комнаты:</div>
+        <div class="code-display" id="generatedCode">XXXXXX</div>
+        <button class="copy-btn" onclick="copyCode()">📋 Скопировать код</button>
+    </div>
+
+    <div class="message" id="message"></div>
 </div>
 
 <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+    // Хранилище для комнат (в реальном приложении нужно использовать сервер)
+    const rooms = new Map();
 
-    let players = [];
-    let phase = 'night'; // night / day
-    let selectedPlayer = null;
-    let myRole = '';
-
-    function startGame() {
-        const count = document.getElementById('playerCount').value;
-        players = [];
-
-        // Распределяем роли (1 мафия на 3 мирных)
-        for (let i = 1; i <= count; i++) {
-            players.push({
-                id: i,
-                name: 'Игрок ' + i,
-                role: 'citizen',
-                alive: true
-            });
+    // Генерация случайного кода комнаты
+    function generateRoomCode() {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        for (let i = 0; i < 6; i++) {
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
         }
-
-        // Назначаем мафию (в этом примере мафия — Игрок 1, чтобы проще тестировать)
-        players[0].role = 'mafia';
-        myRole = 'mafia'; // Представим, что мы играем за Мафию
-
-        document.getElementById('lobby').classList.remove('active');
-        document.getElementById('game').classList.add('active');
-
-        updateUI();
-        log("Игра началась. Вы Мафия! Ваша задача — устранить мирных.");
+        return result;
     }
 
-    function updateUI() {
-        const container = document.getElementById('playerContainer');
-        container.innerHTML = '';
+    // Создание комнаты
+    function createRoom() {
+        const playerName = document.getElementById('playerName').value.trim();
+        const roomName = document.getElementById('roomName').value.trim();
 
-        document.getElementById('roleDisplay').innerText = `Ваша роль: ${myRole === 'mafia' ? 'МАФИЯ' : 'МИРНЫЙ'}`;
-
-        players.forEach(p => {
-            const card = document.createElement('div');
-            card.className = `player-card ${!p.alive ? 'dead' : ''} ${selectedPlayer === p.id ? 'selected' : ''}`;
-            card.innerHTML = `<b>${p.name}</b><br>${p.alive ? 'Жив' : 'Мертв'}`;
-            card.onclick = () => selectPlayer(p.id);
-            container.appendChild(card);
-        });
-
-        if (phase === 'night') {
-            document.body.classList.remove('day-mode');
-            document.getElementById('phaseDisplay').innerText = 'НОЧЬ: ВРЕМЯ МАФИИ';
-            document.getElementById('actionHint').innerText = 'Выберите, кого убить:';
-        } else {
-            document.body.classList.add('day-mode');
-            document.getElementById('phaseDisplay').innerText = 'ДЕНЬ: ГОЛОСОВАНИЕ';
-            document.getElementById('actionHint').innerText = 'Кого выгоним из города?';
-        }
-    }
-
-    function selectPlayer(id) {
-        selectedPlayer = id;
-        tg.HapticFeedback.impactOccurred('light');
-        updateUI();
-    }
-
-    function processAction() {
-        if (!selectedPlayer) {
-            tg.showAlert("Сначала выберите игрока!");
+        if (!playerName) {
+            showMessage('Введите имя игрока!', 'error');
             return;
         }
 
-        const target = players.find(p => p.id === selectedPlayer);
-
-        if (phase === 'night') {
-            target.alive = false;
-            log(`Ночью был убит ${target.name}`);
-            phase = 'day';
-        } else {
-            target.alive = false;
-            log(`Город проголосовал против ${target.name}`);
-            phase = 'night';
+        if (!roomName) {
+            showMessage('Введите название комнаты!', 'error');
+            return;
         }
 
-        selectedPlayer = null;
-        checkWinner();
-        updateUI();
+        // Генерируем уникальный код комнаты
+        let roomCode;
+        do {
+            roomCode = generateRoomCode();
+        } while (rooms.has(roomCode));
+
+        // Создаем комнату
+        const room = {
+            code: roomCode,
+            name: roomName,
+            host: playerName,
+            players: [playerName],
+
+DERIKOMA, [04.02.2026 0:25]
+maxPlayers: 10,
+            gameStarted: false,
+            createdAt: new Date().toISOString()
+        };
+
+        // Сохраняем комнату
+        rooms.set(roomCode, room);
+
+        // Показываем код комнаты
+        document.getElementById('generatedCode').textContent = roomCode;
+        document.getElementById('roomCodeContainer').style.display = 'block';
+
+        showMessage(Комната "${roomName}" создана! Код: ${roomCode}, 'success');
+
+        // В реальном приложении здесь будет переход на страницу игры
+        // Пример: window.location.href = /game.html?room=${roomCode}&player=${playerName};
+
+        // Для демо: автоматическое заполнение кода комнаты
+        document.getElementById('roomCode').value = roomCode;
+
+        // Логируем создание комнаты
+        console.log('Создана комната:', room);
+        console.log('Все комнаты:', Array.from(rooms.values()));
     }
 
-    function log(msg) {
-        const logDiv = document.getElementById('gameLog');
-        logDiv.innerHTML = `<div>> ${msg}</div>` + logDiv.innerHTML;
+    // Присоединение к комнате
+    function joinRoom() {
+        const playerName = document.getElementById('playerName').value.trim();
+        const roomCode = document.getElementById('roomCode').value.trim().toUpperCase();
+
+        if (!playerName) {
+            showMessage('Введите имя игрока!', 'error');
+            return;
+        }
+
+        if (!roomCode) {
+            showMessage('Введите код комнаты!', 'error');
+            return;
+        }
+
+        // Проверяем существование комнаты
+        if (!rooms.has(roomCode)) {
+            showMessage('Комната не найдена! Проверьте код.', 'error');
+            return;
+        }
+
+        const room = rooms.get(roomCode);
+
+        // Проверяем, началась ли игра
+        if (room.gameStarted) {
+            showMessage('Игра уже началась!', 'error');
+            return;
+        }
+
+        // Проверяем количество игроков
+        if (room.players.length >= room.maxPlayers) {
+            showMessage('Комната заполнена!', 'error');
+            return;
+        }
+
+        // Проверяем, не подключен ли уже игрок с таким именем
+        if (room.players.includes(playerName)) {
+            showMessage('Игрок с таким именем уже в комнате!', 'error');
+            return;
+        }
+
+        // Добавляем игрока в комнату
+        room.players.push(playerName);
+        rooms.set(roomCode, room);
+
+        showMessage(Вы присоединились к комнате "${room.name}"!, 'success');
+
+        // В реальном приложении здесь будет переход на страницу игры
+        // Пример: window.location.href = /game.html?room=${roomCode}&player=${playerName};
+
+        // Логируем присоединение
+        console.log(Игрок ${playerName} присоединился к комнате ${roomCode});
+        console.log('Игроки в комнате:', room.players);
     }
 
-    function checkWinner() {
-        const aliveMafia = players.filter(p => p.role === 'mafia' && p.alive).length;
-        const aliveCitizens = players.filter(p => p.role === 'citizen' && p.alive).length;
+    // Копирование кода комнаты
+    function copyCode() {
+        const code = document.getElementById('generatedCode').textContent;
+        navigator.clipboard.writeText(code)
+            .then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Скопировано!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            })
+            .catch(err => {
+                console.error('Ошибка копирования:', err);
+                showMessage('Не удалось скопировать код', 'error');
 
-        if (aliveMafia === 0) endGame("МИРНЫЕ ПОБЕДИЛИ!");
-        else if (aliveMafia >= aliveCitizens) endGame("МАФИЯ ПОБЕДИЛА!");
+DERIKOMA, [04.02.2026 0:25]
+});
     }
 
-    function endGame(msg) {
-        document.getElementById('game').classList.remove('active');
-        document.getElementById('results').classList.add('active');
-        document.getElementById('winMessage').innerText = msg;
+    // Показать сообщение
+    function showMessage(text, type) {
+        const messageEl = document.getElementById('message');
+        messageEl.textContent = text;
+        messageEl.className = 'message ' + type;
+        messageEl.style.display = 'block';
+
+        // Автоматическое скрытие сообщения через 5 секунд
+        setTimeout(() => {
+            messageEl.style.display = 'none';
+        }, 5000);
     }
+
+    // Автоматическая генерация случайного имени игрока при загрузке
+    document.addEventListener('DOMContentLoaded', function() {
+        const adjectives = ['Хитрый', 'Мудрый', 'Быстрый', 'Тихий', 'Смелый', 'Осторожный'];
+        const nouns = ['Детектив', 'Мафиози', 'Горожанин', 'Шериф', 'Доктор', 'Маньяк'];
+
+        const randomName = adjectives[Math.floor(Math.random() * adjectives.length)] + ' ' +
+                          nouns[Math.floor(Math.random() * nouns.length)];
+
+        document.getElementById('playerName').value = randomName;
+
+        // Фокус на поле имени
+        document.getElementById('playerName').focus();
+    });
+
+    // Обработка нажатия Enter
+    document.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            const focused = document.activeElement;
+            if (focused.id === 'roomCode') {
+                joinRoom();
+            } else if (focused.id === 'roomName' || focused.id === 'playerName') {
+                createRoom();
+            }
+        }
+    });
+
+    // Для отладки: вывод всех комнат в консоль
+    window.debugRooms = function() {
+        console.log('Все активные комнаты:', Array.from(rooms.values()));
+    };
 </script>
 </body>
 </html>
-<div class="mafia-container">
-    <h2>🎭 Комната Мафии</h2>
-
-    <!-- Вход в комнату -->
-    <div id="lobby-setup">
-        <input type="text" id="playerName" placeholder="Ваше имя">
-        <button onclick="createRoom()">Создать комнату</button>
-        <div style="margin-top: 10px;">
-            <input type="text" id="roomCodeInput" placeholder="Код комнаты">
-            <button onclick="joinRoom()">Войти</button>
-        </div>
-    </div>
-
-    <!-- Игровой интерфейс (скрыт по умолчанию) -->
-    <div id="game-room" style="display: none;">
-        <div class="room-header">
-            <span>Комната: <b id="roomDisplay">#0000</b></span>
-            <button onclick="leaveRoom()">Выйти</button>
-        </div>
-
-        <div class="players-section">
-            <h3>Игроки в лобби:</h3>
-            <ul id="playerList"></ul>
-        </div>
-
-        <div id="role-display" class="role-box">
-            Роль еще не назначена...
-        </div>
-
-        <button id="startGameBtn" class="primary-btn" onclick="distributeRoles()">Распределить роли</button>
-    </div>
-</div>
